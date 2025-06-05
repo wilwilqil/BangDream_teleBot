@@ -11,16 +11,15 @@ if not BOT_TOKEN:                                           # Verify token is lo
 bot = telebot.TeleBot(BOT_TOKEN)
 
 #command list
-@bot.message_handler(commands=['start', 'hello','你好'])
+@bot.message_handler(commands=
+                     ['start', 'hello', 'hi', 
+                      '你好', '你', '妳', '他', '它'])
 def send_welcome(message):
     bot.reply_to(message, "要跟我組一輩子的樂團嗎")
 
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
 	bot.reply_to(message, message.text)
-
-
-
 
 if __name__ == "__main__":
     print("Bot is starting...")
