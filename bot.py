@@ -1,37 +1,39 @@
 import os
 import telebot
-import requests
+from flask import Flask, request
 from dotenv import load_dotenv
 
-class TelegramBot:
-    def __init__(self):
-        # Load environment variables from .env file
-        load_dotenv()
-        self.bot_token = os.environ.get('BOT_TOKEN')
-        if not self.bot_token: raise ValueError("BOT_TOKEN not found in .env file")
-        self.bot = telebot.TeleBot(self.bot_token)
-        self.register_handlers()
+app = Flask(__name__)
 
-    def register_handlers(self):
-        """Register all message handlers for the bot."""
-        @self.bot.message_handler(commands=[
-            'start', 'hello', 'hi',
-            '你好', '你', '妳', '他', '它'])
-        def send_welcome(message):
-            self.bot.reply_to(message, "要跟我組一輩子的樂團嗎")
+# Load environment variables
+load_dotenv()
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN not found in .env file")
+bot = telebot.TeleBot(BOT_TOKEN)
 
-        @self.bot.message_handler(func=lambda message: True)
-        def echo_all(message):
-            self.bot.reply_to(message, message.text)
+# Register handlers
+@bot.message_handler(commands=['start', 'hello', 'hi', '你好', '你', '妳', '他', '它'])
+def send_welcome(message):
+    bot.reply_to(message, "要跟我組一輩子的樂團嗎")
 
-    def start(self):
-        """Start the bot with infinity polling."""
-        print("Bot is starting...")
-        try:
-            self.bot.infinity_polling()
-        except Exception as e:
-            print(f"Bot failed to start: {str(e)}")
+@bot.message_handler(func=lambda message: True)
+def echo_all(message):
+    bot.reply_to(message, message.text)
 
-if __name__ == "__main__":
-    bot_instance = TelegramBot()
-    bot_instance.start()
+# Webhook route
+@app.route('/' + BOT_TOKEN, methods=['POST'])
+def get_message():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '!', 200
+
+@app.route('/')
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url=f'https://<your-app-name>.azurewebsites.net/{BOT_TOKEN}')
+    return 'Webhook set', 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
