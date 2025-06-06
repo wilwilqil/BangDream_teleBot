@@ -1,4 +1,5 @@
-pyTelegramBotAPI
 requests
 python-dotenv
 flask
+python-telegram-bot
+sqlite3
